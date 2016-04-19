@@ -114,7 +114,7 @@ if (username is not None and username != ''):
     opener = urllib2.build_opener(authhandler)
     urllib2.install_opener(opener)
 
-# Replace URL agruments
+# Replace URL arguments
 argCount = len(sys.argv)
 for i in xrange(1, argCount):
     search = '{%d}'%(i - 1)
@@ -131,6 +131,6 @@ del camPreview
 
 dirs, files = xbmcvfs.listdir(__snapshot_dir__)
 for file in files:
-    if os.path.splitext(file)[0].startswith('snapshot'):
+    if file.startswith('snapshot'):
         log('Delete remaining snapshot: [' + file + ']\n', xbmc.LOGDEBUG)
         xbmcvfs.delete(os.path.join(__snapshot_dir__, file))
