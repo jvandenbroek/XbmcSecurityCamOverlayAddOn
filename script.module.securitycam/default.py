@@ -1,5 +1,6 @@
 # Import the modules
 import os, time, urllib2, xbmc, xbmcaddon, xbmcgui, xbmcvfs, tempfile
+from tempfile import gettempdir
 
 # Constants
 ACTION_PREVIOUS_MENU = 10
@@ -13,8 +14,7 @@ __cwd__      = __addon__.getAddonInfo('path').decode("utf-8")
 __icon__     = xbmc.translatePath(os.path.join(__cwd__, 'icon.png').encode("utf-8")).decode("utf-8")
 __profile__  = xbmc.translatePath(__addon__.getAddonInfo('profile')).decode("utf-8")
 __resource__ = xbmc.translatePath(os.path.join(__cwd__, 'resources').encode("utf-8")).decode("utf-8")
-#__snapshot_dir__ = xbmc.translatePath(os.path.join(__profile__, 'snapshots').encode("utf-8")).decode("utf-8")
-__snapshot_dir__ = tempfile.gettempdir()
+__snapshot_dir__ = gettempdir()
 
 # Get settings
 url        = __addon__.getSetting('url')
@@ -53,7 +53,7 @@ class CamPreviewDialog(xbmcgui.WindowDialog):
         snapshot = ''
         startTime = time.time()
         shown = False
-        while(not autoclose or (time.time() - startTime) * 1000 <= duration):
+        while(not autoclose or not xbmc.Monitor.abortRequested or ((time.time() - startTime) * 1000 <= duration)):
             if xbmcvfs.exists(snapshot):
                 os.remove(snapshot)
 
@@ -107,8 +107,10 @@ log('Original URL: [' + url + ']\n', xbmc.LOGDEBUG)
 if (username is not None and username != ''):
     passwordManager = urllib2.HTTPPasswordMgrWithDefaultRealm()
     passwordManager.add_password(None, url, username, password)
-    if authtype == 'Basic': authhandler = urllib2.HTTPBasicAuthHandler(passwordManager)
-    if authtype == 'Digest': authhandler = urllib2.HTTPDigestAuthHandler(passwordManager)
+    if authtype == 'Basic':
+        authhandler = urllib2.HTTPBasicAuthHandler(passwordManager)
+    if authtype == 'Digest':
+        authhandler = urllib2.HTTPDigestAuthHandler(passwordManager)
     opener = urllib2.build_opener(authhandler)
     urllib2.install_opener(opener)
 
@@ -129,5 +131,6 @@ del camPreview
 
 dirs, files = xbmcvfs.listdir(__snapshot_dir__)
 for file in files:
-    log('Delete remaining snapshot: [' + file + ']\n', xbmc.LOGDEBUG)
-    xbmcvfs.delete(os.path.join(__snapshot_dir__, file))
+    if os.path.splitext(file)[0].startswith('snapshot'):
+        log('Delete remaining snapshot: [' + file + ']\n', xbmc.LOGDEBUG)
+        xbmcvfs.delete(os.path.join(__snapshot_dir__, file))
